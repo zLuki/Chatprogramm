@@ -1,8 +1,8 @@
-import math
 import random
 import socket
 import socket, threading
 import json
+import numpy
 
 
 # MillerRabin Algorithmus
@@ -63,8 +63,8 @@ def broadcast(message):                                                 #broadca
     ascii = [ord(x) for x in message]
     for i in range(len(clients)):
         encrypted = [modulares_potenzieren(x, int(public_keys[i][0]), int(public_keys[i][1])) for x in ascii]
-        hex_nums = [hex(x) for x in encrypted]
-        clients[i].send(json.dumps(hex_nums).encode())
+        base36_nums = [numpy.base_repr(x, base=36) for x in encrypted]
+        clients[i].send(json.dumps(base36_nums).encode())
 
 
 def handle(client, d):
@@ -95,7 +95,7 @@ def receive(e, N, private_key):                                                 
 
 def decrypt(d, text, N): #decrypt text with d
     text = json.loads(text)
-    nums = [int(x, 16) for x in text]
+    nums = [int(x, 36) for x in text]
     decrypted = [modulares_potenzieren(x, d, N) for x in nums]
     text = ''.join([chr(x) for x in decrypted])
     return text
@@ -133,7 +133,7 @@ if __name__ == "__main__":
     # Falls der private key negativ ist, muss noch einmal das a addiert werden
     private_key = d[-1] if d[-1] > 0 else d[-1] + a[0]
 
-    host = '10.171.152.171'                                                   #LocalHost
+    host = '192.168.1.7'                                                   #LocalHost
     port = 50000                                                             #Port wählen
 
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)              #socket initialisieren
