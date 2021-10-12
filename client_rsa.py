@@ -2,6 +2,8 @@ import random
 import socket
 import json
 import threading
+import numpy;
+
 
 def modulares_potenzieren(b,e,m):
     res = 1
@@ -54,8 +56,9 @@ def make_prime(n):
     return n
 
 def decrypt(d, text, N): #decrypt text with d
+    print(text)
     text = json.loads(text)
-    nums = [int(x, 16) for x in text]
+    nums = [int(x, 36) for x in text]
     decrypted = [modulares_potenzieren(x, d, N) for x in nums]
     text = ''.join([chr(x) for x in decrypted])
     return text
@@ -63,7 +66,7 @@ def decrypt(d, text, N): #decrypt text with d
 def handle(private_key, N, server):
     while True:
         #try:
-        text = server.recv(int(1e10)).decode('utf8')
+        text = server.recv(int(1e8)).decode('utf8')
         print("Got message from Server: "+decrypt(private_key, text, N))
         #except:
             #print("FEHLER!")
@@ -102,7 +105,7 @@ private_key = d[-1] if d[-1] > 0 else d[-1] + a[0]
 #print(private_key)
 
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-s.connect(("10.171.152.171", 50000))
+s.connect(("192.168.1.7", 50000))
 
 s.send(str(e).encode())
 s.send(str(N).encode())
@@ -117,5 +120,5 @@ while (True):
     data = input("Geben Sie die Nachricht ein: ")
     ascii = [ord(x) for x in data]
     encrypted = [modulares_potenzieren(x, e, N_server) for x in ascii]
-    hex_nums = [hex(x) for x in encrypted]  
-    s.send(json.dumps(hex_nums).encode())
+    base36_nums = [numpy.base_repr(x, 36) for x in encrypted]  
+    s.send(json.dumps(base36_nums).encode())
