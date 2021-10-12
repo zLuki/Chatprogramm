@@ -75,7 +75,7 @@ def handle(client, d):
            broadcast(decrypt(private_key, text, N))
         except:                                                         #löschen der Clients
             index = clients.index(client)
-            public_keys.remove(index)
+            public_keys.pop(index)
             clients.remove(client)
             client.close()
             break
