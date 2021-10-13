@@ -78,6 +78,31 @@ public class ClientRSA {
         return n;
     }
 
+    private static String base36Encoder(BigInteger n) {
+        String res = "", chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        BigInteger constant = new BigInteger("36");
+        BigInteger[] buf;
+        do {
+            buf = n.divideAndRemainder(constant);
+            res += chars.charAt(buf[1].intValue());
+            n = buf[0];
+        } while (buf[0].compareTo(BigInteger.ZERO) == 1);
+        return new StringBuilder(res).reverse().toString();
+    }
+
+    private static BigInteger base36Decoder(String n) {
+        String chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        BigInteger sum = BigInteger.ZERO;
+        int counter = 0;
+        for (int i = n.length()-1; i >= 0; i--) {
+            BigInteger posValue = BigInteger.valueOf(36).pow(counter);
+            BigInteger numValue = BigInteger.valueOf(chars.indexOf(n.charAt(i)));
+            sum = sum.add(posValue.multiply(numValue));
+            counter++;
+        }
+        return sum;
+    }
+
     public static void main(String[] args) {
 
         String limit = "1";
@@ -93,9 +118,6 @@ public class ClientRSA {
         } while (e.compareTo(phi) >= 0 || phi.remainder(e).intValue() == 0);
 
         ArrayList<BigInteger> a = new ArrayList<>(), b = new ArrayList<>();
-        
-        //phi = BigInteger.valueOf(48);
-        //e = BigInteger.valueOf(11);
         
         a.add(phi);
         b.add(e);
@@ -122,13 +144,3 @@ public class ClientRSA {
         System.out.println(privateKey);
     }
 }
-
-
-/*def modulares_potenzieren(b,e,m):
-    res = 1
-    while e > 0:
-        if e%2 == 1:
-            res = (res*b)%m
-        b = (b*b)%m
-        e = e//2
-    return res*/
