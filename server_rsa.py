@@ -3,7 +3,7 @@ import socket
 import socket, threading
 import json
 import numpy
-
+import re
 
 # MillerRabin Algorithmus
 def millerRabin(n):
@@ -84,11 +84,13 @@ def receive(e, N, private_key):                                                 
     while True:
         client, address = server.accept()
         print("Verbunden mit {}".format(str(address)))
-        e_client = client.recv(1024).decode('utf8')
-        N_client = client.recv(1024).decode('utf8')
+        e_client = re.sub("\D", "", client.recv(1024).decode('utf8'))
+        N_client = re.sub("\D", "", client.recv(1024).decode('utf8'))
+        print(e_client)
+        print(N_client)
         public_keys.append([e_client, N_client])
-        client.send(str(e).encode('utf8'))
-        client.send(str(N).encode('utf8'))
+        client.send((str(e)+"\r\n").encode('utf8'))
+        client.send((str(N)+"\r\n").encode('utf8'))
         clients.append(client)
         thread = threading.Thread(target=handle, args=(client, private_key))
         thread.start()
@@ -133,7 +135,7 @@ if __name__ == "__main__":
     # Falls der private key negativ ist, muss noch einmal das a addiert werden
     private_key = d[-1] if d[-1] > 0 else d[-1] + a[0]
 
-    host = '192.168.1.7'                                                   #LocalHost
+    host = '192.168.1.6'                                                   #LocalHost
     port = 50000                                                             #Port wählen
 
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)              #socket initialisieren
@@ -144,7 +146,7 @@ if __name__ == "__main__":
     public_keys = []
     nicknames = ["WDQAD"]
     nicknames[0] = "ewqdq"
-
+    print("RSA_FINISHED")
     receive(e, N, private_key)
 
 
