@@ -2,8 +2,16 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Random;
+import java.net.*;
+import java.nio.charset.StandardCharsets;
+import java.io.*;
 
 public class ClientRSA {
+
+    private Socket clientSocket;
+    private DataOutputStream out;
+    //private DataInputStream in;
+    private BufferedReader in;
 
     public static BigInteger modularesPotenzieren(BigInteger b, BigInteger e, BigInteger m) {
         BigInteger res = BigInteger.ONE;
@@ -103,10 +111,55 @@ public class ClientRSA {
         return sum;
     }
 
+    public void startConnection(String ip, int port) {
+        try {
+            clientSocket = new Socket(ip, port);
+            out = new DataOutputStream(clientSocket.getOutputStream());
+            //in = new DataInputStream(clientSocket.getInputStream());
+            in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+        } catch(IOException e) {
+            System.out.println("FEHLER BEIM VERBINDEN MIT DEM SERVER!");
+        }
+    }
+
+    public void sendMessage(String msg) {
+        try {
+            out.writeUTF(msg);
+            out.flush();
+        } catch (IOException e) {
+            System.out.println("FEHLER BEIM SENDEN EINER NACHRICHT!");
+        }
+        return;
+    }
+
+    public String getMessage() {
+        String res = "";
+        try {
+            while (true) {
+                System.out.println("Volle");
+                res = in.readLine();
+                if (res.length() > 0) break;
+            }
+        } catch (IOException e) {
+            System.out.println("FEHLER BEIM EMPFANGEN EINER NACHRICHT!");
+        }
+        return res;
+    }
+
+    public void stopConnection() {
+        try {
+            in.close();
+            out.close();
+            clientSocket.close();
+        } catch (IOException e) {
+            System.out.println("FEHLER BEIM BEENDEN DER VERBINDUNG ZUM SERVER!");
+        }
+    }
+
     public static void main(String[] args) {
 
         String limit = "1";
-        for (int i = 0; i < 100; i++) limit += "0";
+        for (int i = 0; i < 10; i++) limit += "0";
         BigInteger min = new BigInteger(limit), max = new BigInteger(limit+"0");
 
         BigInteger p = makePrime(getRandomBigInt(min, max));
@@ -142,5 +195,20 @@ public class ClientRSA {
         System.out.println(e);
         System.out.println(N);
         System.out.println(privateKey);
+
+
+        ClientRSA client = new ClientRSA();
+        client.startConnection("192.168.1.6", 50000);
+        client.sendMessage(e.toString());
+        client.sendMessage(N.toString());
+        
+        System.out.println("Bruder!");
+        BigInteger eServer = new BigInteger(client.getMessage());
+        BigInteger nServer = new BigInteger(client.getMessage());
+
+        System.out.println(eServer);
+        System.out.println(nServer);
+        //System.out.println("Nieder");
+
     }
 }
