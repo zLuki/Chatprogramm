@@ -1,4 +1,6 @@
 import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Random;
 
 public class ClientRSA {
@@ -58,31 +60,66 @@ public class ClientRSA {
     Risk 15 = Ein Fehler ist unwahrscheinlicher als zwei mal vom Blitz an einem Tag getroffen zu werden
      */
     private static boolean isPrime(BigInteger n) {
-        int RISK = 12;
+        int RISK = 13, primeTest = 0;
         for (int i = 0; i < RISK; i++) {
-            if (!millerRabin(n)) return false;
+            if (millerRabin(n)) primeTest++;
+            else primeTest--;
         }
-        return true;
+        return primeTest > 0;
     }
 
-    /*private static BigInteger makePrime(BigInteger n) {
+    private static BigInteger makePrime(BigInteger n) {
         if (n.remainder(BigInteger.TWO).intValue() == 0) {
             n = n.add(BigInteger.ONE);
         }
         while (!isPrime(n)) {
             n = n.add(BigInteger.TWO);
         }
-
-        return BigInteger.ZERO;
-    }*/
+        return n;
+    }
 
     public static void main(String[] args) {
-        BigInteger b = new BigInteger("7"), e = new BigInteger("64"), N = new BigInteger("43");
-        int c = 0;
-        for (int i = 0; i < 1000; i++) {
-            if (millerRabin(b)) c++;
+
+        String limit = "1";
+        for (int i = 0; i < 100; i++) limit += "0";
+        BigInteger min = new BigInteger(limit), max = new BigInteger(limit+"0");
+
+        BigInteger p = makePrime(getRandomBigInt(min, max));
+        BigInteger q = makePrime(getRandomBigInt(min, max));
+        BigInteger N = p.multiply(q), e;
+        BigInteger phi = p.subtract(BigInteger.ONE).multiply(q.subtract(BigInteger.ONE));
+        do {
+            e = makePrime(getRandomBigInt(BigInteger.TWO, phi.subtract(BigInteger.ONE)));
+        } while (e.compareTo(phi) >= 0 || phi.remainder(e).intValue() == 0);
+
+        ArrayList<BigInteger> a = new ArrayList<>(), b = new ArrayList<>();
+        
+        //phi = BigInteger.valueOf(48);
+        //e = BigInteger.valueOf(11);
+        
+        a.add(phi);
+        b.add(e);
+        while (b.get(b.size()-1).compareTo(BigInteger.ZERO) != 0) {
+            b.add(a.get(a.size()-1).remainder(b.get(b.size()-1)));
+            a.add(b.get(b.size()-2));
         }
-        System.out.println(c);
+        ArrayList<BigInteger> y = new ArrayList<>(Arrays.asList(BigInteger.ONE, BigInteger.ZERO, BigInteger.ONE));
+        ArrayList<BigInteger> d = new ArrayList<>(Arrays.asList(BigInteger.ZERO, BigInteger.ONE));
+        int counter = 3;
+
+        while (counter <= a.size()) {
+            d.add(BigInteger.ONE.subtract(y.get(y.size()-1).multiply(a.get(a.size()-counter))).divide(b.get(b.size()-counter)));
+            y.add(d.get(d.size()-1));
+            counter++;
+        }
+
+        BigInteger privateKey = d.get(d.size()-1);
+        if (privateKey.compareTo(BigInteger.ZERO) < 0) {
+            privateKey = privateKey.add(a.get(0));
+        }
+        System.out.println(e);
+        System.out.println(N);
+        System.out.println(privateKey);
     }
 }
 
