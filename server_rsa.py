@@ -64,16 +64,17 @@ def broadcast(message):                                                 #broadca
     for i in range(len(clients)):
         encrypted = [modulares_potenzieren(x, int(public_keys[i][0]), int(public_keys[i][1])) for x in ascii]
         base36_nums = [numpy.base_repr(x, base=36) for x in encrypted]
-        clients[i].send(json.dumps(base36_nums).encode())
+        clients[i].send((json.dumps(base36_nums)+"\r\n").encode())
 
 
 def handle(client, d):
     while True:
         try:                                                            #recieving messages vom Client
-           text = client.recv(int(1e10)).decode('utf8')
-           print("Client "+str(clients.index(client)) + ": " +decrypt(private_key, text, N))
-           broadcast(decrypt(private_key, text, N))
-        except:                                                         #löschen der Clients
+            text = client.recv(int(1e10)).decode('utf8')
+            print("Client "+str(clients.index(client)) + ": " +decrypt(private_key, text, N))
+            broadcast(decrypt(private_key, text, N))
+        except:
+            print("Client " + str(clients.index(client)) + " disconnected.")                                                    #löschen der Clients
             index = clients.index(client)
             public_keys.pop(index)
             clients.remove(client)
@@ -135,7 +136,7 @@ if __name__ == "__main__":
     # Falls der private key negativ ist, muss noch einmal das a addiert werden
     private_key = d[-1] if d[-1] > 0 else d[-1] + a[0]
 
-    host = '192.168.1.6'                                                   #LocalHost
+    host = '192.168.48.129'                                                   #LocalHost
     port = 50000                                                             #Port wählen
 
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)              #socket initialisieren
