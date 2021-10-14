@@ -105,7 +105,7 @@ private_key = d[-1] if d[-1] > 0 else d[-1] + a[0]
 #print(private_key)
 
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-s.connect(("192.168.1.7", 50000))
+s.connect(("192.168.48.129", 50000))
 
 s.send(str(e).encode())
 s.send(str(N).encode())

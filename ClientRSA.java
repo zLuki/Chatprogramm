@@ -3,13 +3,14 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Random;
 import java.net.*;
-import java.nio.charset.StandardCharsets;
 import java.io.*;
+import java.util.Scanner;
 
 public class ClientRSA {
 
     private Socket clientSocket;
-    private DataOutputStream out;
+    private PrintWriter out;
+    //private DataOutputStream out;
     //private DataInputStream in;
     private BufferedReader in;
 
@@ -114,7 +115,8 @@ public class ClientRSA {
     public void startConnection(String ip, int port) {
         try {
             clientSocket = new Socket(ip, port);
-            out = new DataOutputStream(clientSocket.getOutputStream());
+            //out = new DataOutputStream(clientSocket.getOutputStream());
+            out = new PrintWriter(clientSocket.getOutputStream(), true);
             //in = new DataInputStream(clientSocket.getInputStream());
             in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
         } catch(IOException e) {
@@ -123,20 +125,19 @@ public class ClientRSA {
     }
 
     public void sendMessage(String msg) {
-        try {
-            out.writeUTF(msg);
+        //try {
+            out.println(msg);
             out.flush();
-        } catch (IOException e) {
-            System.out.println("FEHLER BEIM SENDEN EINER NACHRICHT!");
-        }
-        return;
+        //} catch (IOException e) {
+        //    System.out.println("FEHLER BEIM SENDEN EINER NACHRICHT!");
+        //}
+        //return;
     }
 
     public String getMessage() {
         String res = "";
         try {
             while (true) {
-                System.out.println("Volle");
                 res = in.readLine();
                 if (res.length() > 0) break;
             }
@@ -188,27 +189,56 @@ public class ClientRSA {
             counter++;
         }
 
-        BigInteger privateKey = d.get(d.size()-1);
-        if (privateKey.compareTo(BigInteger.ZERO) < 0) {
-            privateKey = privateKey.add(a.get(0));
+        BigInteger privateKeyBuf = d.get(d.size()-1);
+        if (privateKeyBuf.compareTo(BigInteger.ZERO) < 0) {
+            privateKeyBuf = privateKeyBuf.add(a.get(0));
         }
-        System.out.println(e);
-        System.out.println(N);
-        System.out.println(privateKey);
+        final BigInteger privateKey = privateKeyBuf;
+        //System.out.println(e);
+        //System.out.println(N);
+        //System.out.println(privateKey);
 
 
         ClientRSA client = new ClientRSA();
-        client.startConnection("192.168.1.6", 50000);
+        client.startConnection("192.168.48.129", 50000);
         client.sendMessage(e.toString());
         client.sendMessage(N.toString());
         
-        System.out.println("Bruder!");
+        //System.out.println("Bruder!");
         BigInteger eServer = new BigInteger(client.getMessage());
         BigInteger nServer = new BigInteger(client.getMessage());
 
-        System.out.println(eServer);
-        System.out.println(nServer);
+        //System.out.println(eServer);
+        //System.out.println(nServer);
         //System.out.println("Nieder");
+        new Thread(() -> {
+            while (true) {
+                String s = client.getMessage(), text = "";
+                //.out.println(s);
+                String nums[] = s.substring(s.indexOf("[")+1, s.indexOf("]")).split(",");
+                
+                for (int i = 0; i < nums.length; i++) {
+                    BigInteger encrypted = base36Decoder(nums[i].substring(nums[i].indexOf("\"")+1, nums[i].lastIndexOf("\"")));
+                    BigInteger decrypted = modularesPotenzieren(encrypted, privateKey, N);
+                    text += String.valueOf((char) (decrypted.intValue()));
+                }
+                System.out.println("Got message from server: "+text);
+            }    
+        }).start();
+        Scanner scanner = new Scanner(System.in);
+        while (true) {
+            System.out.print("Geben Sie eine Nachricht ein: ");
+            String text = scanner.nextLine();
+            String nums = "[";
+            for (int i = 0; i < text.length(); i++) {
+                int ascii = text.charAt(i);
+                BigInteger encrypted = modularesPotenzieren(BigInteger.valueOf(ascii), eServer, nServer);
+                String base36 = base36Encoder(encrypted);
+                nums += "\""+base36+"\",";
+            }
+            nums = nums.substring(0, nums.length()-1) + "]";
+            client.sendMessage(nums);
+        }
 
     }
 }
