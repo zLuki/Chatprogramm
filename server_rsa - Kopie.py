@@ -4,6 +4,10 @@ import socket, threading
 import json
 import numpy
 import re
+import tkinter as tk
+from tkinter import *
+import time
+from PIL import Image, ImageTk
 
 # MillerRabin Algorithmus
 def millerRabin(n):
@@ -59,30 +63,36 @@ def modulares_potenzieren(b,e,m):
         e=e//2
     return res
 
-def broadcast(message):                                                 #broadcast funktion
+def broadcast(message, public_keys, clients):                                                 #broadcast funktion
     ascii = [ord(x) for x in message]
     for i in range(len(clients)):
         encrypted = [modulares_potenzieren(x, int(public_keys[i][0]), int(public_keys[i][1])) for x in ascii]
         base36_nums = [numpy.base_repr(x, base=36) for x in encrypted]
         clients[i].send((json.dumps(base36_nums)+"\r\n").encode())
+        print("Hoi")
 
+def decrypt(d, text, N): #decrypt text with d
+    text = json.loads(text)
+    nums = [int(x, 36) for x in text]
+    decrypted = [modulares_potenzieren(x, d, N) for x in nums]
+    text = ''.join([chr(x) for x in decrypted])
+    return text
 
-def handle(client, d):
+def handle(client, private_key, N, public_keys, clients):
     while True:
-        try:                                                            #recieving messages vom Client
-            text = client.recv(int(1e6)).decode('utf8')
-            print("Client "+str(clients.index(client)) + ": " +decrypt(private_key, text, N))
-            broadcast(decrypt(private_key, text, N))
-        except:
+        #try:                                                            #recieving messages vom Client
+        text = client.recv(int(1e6)).decode('utf8')
+        print("Client "+str(clients.index(client)) + ": " +decrypt(private_key, text, N))
+        broadcast(decrypt(private_key, text, N), public_keys, clients)
+        """except:
             print("Client " + str(clients.index(client)) + " disconnected.")                                                    #löschen der Clients
             index = clients.index(client)
             public_keys.pop(index)
             clients.remove(client)
             client.close()
-            break
-        
+            break"""
 
-def receive(e, N, private_key):                                                          #mehrere Clients empfangen
+def receive(e, N, private_key, server, public_keys, clients):                                                          #mehrere Clients empfangen
     while True:
         client, address = server.accept()
         print("Verbunden mit {}".format(str(address)))
@@ -94,18 +104,11 @@ def receive(e, N, private_key):                                                 
         client.send((str(e)+"\r\n").encode('utf8'))
         client.send((str(N)+"\r\n").encode('utf8'))
         clients.append(client)
-        thread = threading.Thread(target=handle, args=(client, private_key))
+        thread = threading.Thread(target=handle, args=(client, private_key, N, public_keys, clients))
         thread.start()
 
-def decrypt(d, text, N): #decrypt text with d
-    text = json.loads(text)
-    nums = [int(x, 36) for x in text]
-    decrypted = [modulares_potenzieren(x, d, N) for x in nums]
-    text = ''.join([chr(x) for x in decrypted])
-    return text
 
-
-if __name__ == "__main__":
+def create_keys():
     print("RSA Start")
 
     p = make_prime(random.randint(1e100, 1e101))
@@ -136,8 +139,15 @@ if __name__ == "__main__":
 
     # Falls der private key negativ ist, muss noch einmal das a addiert werden
     private_key = d[-1] if d[-1] > 0 else d[-1] + a[0]
+    return (e, N, private_key)
 
-    host = '192.168.1.7'                                                   #LocalHost
+def main():
+    print("Hallo")
+    e, N, private_key = create_keys()
+
+    ip_tester = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    ip_tester.connect(("8.8.8.8", 80))
+    host = ip_tester.getsockname()[0]                                                 #LocalHost
     port = 50000                                                             #Port wählen
 
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)              #socket initialisieren
@@ -149,9 +159,40 @@ if __name__ == "__main__":
     nicknames = ["WDQAD"]
     nicknames[0] = "ewqdq"
     print("RSA_FINISHED")
-    receive(e, N, private_key)
+    receive(e, N, private_key, server, public_keys, clients)
 
+"""
+def gif_displayer(label, name, sleep_time):
+    i = 0
+    while True:
+        try:
+            frame = PhotoImage(file=name, format = 'gif -index %i' %(i))
+            i += 1
+            label.configure(image=frame)
+            time.sleep(sleep_time)
+        except:
+           i = 0
+"""       
 
+if __name__ == "__main__":
+    logic = threading.Thread(target=main)
+    logic.start()
+    window = tk.Tk()
+    window.geometry("500x500")
+    window.title("RSA SECURED PYTHON SERVER")
+    window.iconbitmap("logo_server.ico")
+    label = tk.Label(window, text="Server wird gestartet...")
+    label.pack()
+    label.place(x=250, y=150, anchor="center")
+    label['font'] = ("Courier", 20)
+    """
+    wheel_label = tk.Label(window, width=250, height=250)
+    wheel_label.pack()
+    #wheel_label.place(width=200, height=200, x=250, y=250, anchor="center")
+    wheel = threading.Thread(target=gif_displayer, args=(wheel_label, "loading_wheel.gif", 0.1))
+    wheel.start()
+    """
+    
+    window.mainloop()
 
-
-
+    
