@@ -7,8 +7,8 @@ import re
 import tkinter as tk
 from tkinter import *
 import time
-from PIL import Image, ImageTk
 from stoppable_thread import Stoppable_thread
+from PIL import ImageTk, Image
 
 # MillerRabin Algorithmus
 def millerRabin(n):
@@ -70,7 +70,6 @@ def broadcast(message, public_keys, clients):                                   
         encrypted = [modulares_potenzieren(x, int(public_keys[i][0]), int(public_keys[i][1])) for x in ascii]
         base36_nums = [numpy.base_repr(x, base=36) for x in encrypted]
         clients[i].send((json.dumps(base36_nums)+"\r\n").encode())
-        print("Hoi")
 
 def decrypt(d, text, N): #decrypt text with d
     text = json.loads(text)
@@ -79,21 +78,25 @@ def decrypt(d, text, N): #decrypt text with d
     text = ''.join([chr(x) for x in decrypted])
     return text
 
-def handle(client, private_key, N, public_keys, clients):
+def handle(client, private_key, N, public_keys, clients, nicknames, amount_messages):
     while True:
+        index = clients.index(client)
         try:                                                            #recieving messages vom Client
             text = client.recv(int(1e6)).decode('utf8')
             print("Client "+str(clients.index(client)) + ": " +decrypt(private_key, text, N))
             broadcast(decrypt(private_key, text, N), public_keys, clients)
+            amount_messages[index] += 1
         except:
-            print("Client " + str(clients.index(client)) + " disconnected.")                                                    #löschen der Clients
-            index = clients.index(client)
+            print("Client " + str(index) + " disconnected.")                                                    #löschen der Clients
             public_keys.pop(index)
+            nicknames.pop(index)
+            amount_messages.pop(index)
             clients.remove(client)
             client.close()
+            refresh_menu(nicknames, clients, amount_messages)
             break
 
-def receive(e, N, private_key, server, public_keys, clients):                                                          #mehrere Clients empfangen
+def receive(e, N, private_key, server, public_keys, clients, nicknames, amount_messages):                                                          #mehrere Clients empfangen
     while True:
         client, address = server.accept()
         print("Verbunden mit {}".format(str(address)))
@@ -105,15 +108,22 @@ def receive(e, N, private_key, server, public_keys, clients):                   
         client.send((str(e)+"\r\n").encode('utf8'))
         client.send((str(N)+"\r\n").encode('utf8'))
         clients.append(client)
-        thread = threading.Thread(target=handle, args=(client, private_key, N, public_keys, clients))
+
+        nickname_client = decrypt(private_key, client.recv(int(1e6)).decode('utf8'), N)
+        nicknames.append(nickname_client)
+
+        amount_messages.append(0)
+
+        thread = threading.Thread(target=handle, args=(client, private_key, N, public_keys, clients, nicknames, amount_messages))
         thread.start()
+        refresh_menu(nicknames, clients, amount_messages)
 
 
 def create_keys():
     print("RSA Start")
 
-    p = make_prime(random.randint(1e150, 1e151))
-    q = make_prime(random.randint(1e150, 1e151))
+    p = make_prime(random.randint(1e50, 1e51))
+    q = make_prime(random.randint(1e50, 1e51))
     N = p*q
     phi = (p-1)*(q-1)
 
@@ -121,9 +131,6 @@ def create_keys():
     e = make_prime(random.randint(2, phi-1))
     while phi % e == 0:
         e = make_prime(random.randint(2, phi-1))
-
-    #p und e an client senden
-
 
     # erweiterter euklidischer Algorithmus
     a, b, q = [phi], [e], []
@@ -142,8 +149,30 @@ def create_keys():
     private_key = d[-1] if d[-1] > 0 else d[-1] + a[0]
     return (e, N, private_key)
 
+def show_menu():
+    connected_users['text'] = "Verbundene Benutzer:\n\n"
+    connected_users_ip['text'] = "IP Adressen:\n\n"
+    connected_users_send_messages['text'] = "Gesendete Nachrichten:\n\n"
+
+def show_correct_start(host):
+    global label, picture
+    label['text'] = "Server wurde gestartet!\n" + host
+    picture.configure(image=ImageTk.PhotoImage(Image.open("check.png").resize((150, 150))))
+    time.sleep(2)
+    label.destroy()
+    picture.destroy()
+    host_label['text'] = "HOST: "+host
+    show_menu()
+
+def refresh_menu(nicknames, clients, amount_messages):
+    show_menu()
+    for i in range(len(nicknames)):
+        connected_users['text'] += nicknames[i] + "\n"
+        connected_users_ip['text'] += clients[i].getsockname()[0] + "\n"
+        connected_users_send_messages['text'] += str(amount_messages[i]) + "\n"
+
+
 def main(loading_animation_thread):
-    print("Hallo")
     e, N, private_key = create_keys()
 
     ip_tester = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -157,12 +186,13 @@ def main(loading_animation_thread):
 
     clients = []
     public_keys = []
-    nicknames = ["WDQAD"]
-    nicknames[0] = "ewqdq"
+    nicknames = []
+    amount_messages = []
     print("RSA_FINISHED")
     loading_animation_thread.stop()
-    label['text'] = "Server wurde gestartet!"
-    receive(e, N, private_key, server, public_keys, clients)
+    show_correct_start(host)
+    #label['text'] = "Server wurde gestartet!"
+    receive(e, N, private_key, server, public_keys, clients, nicknames, amount_messages)
 
 class Loading_Animation(Stoppable_thread):
     def run(self):
@@ -184,6 +214,27 @@ if __name__ == "__main__":
     
     loading_animation_thread = Loading_Animation()
     loading_animation_thread.start()
+
+    picture = tk.Label(window)
+    picture.pack()
+    picture.place(x=250, y=300, anchor="center")
+
+    host_label = tk.Label(window)
+    host_label.pack()
+    host_label.place(x=150, y=70, anchor="center")
+    host_label['font'] = ("Courier", 20)
+
+    connected_users = tk.Label(window,)
+    connected_users.pack()
+    connected_users.place(x=70, y=150, anchor="center")
+
+    connected_users_ip = tk.Label(window)
+    connected_users_ip.pack()
+    connected_users_ip.place(x=200, y=150, anchor="center")
+
+    connected_users_send_messages = tk.Label(window)
+    connected_users_send_messages.pack()
+    connected_users_send_messages.place(x=320, y=150, anchor="center")
 
     logic = threading.Thread(target=main, args=[loading_animation_thread])
     logic.start()
