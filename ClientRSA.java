@@ -200,13 +200,25 @@ public class ClientRSA {
 
 
         ClientRSA client = new ClientRSA();
-        client.startConnection("192.168.48.129", 50000);
+        client.startConnection("192.168.1.7", 50000);
         client.sendMessage(e.toString());
         client.sendMessage(N.toString());
         
         //System.out.println("Bruder!");
         BigInteger eServer = new BigInteger(client.getMessage());
         BigInteger nServer = new BigInteger(client.getMessage());
+
+        Scanner scanner = new Scanner(System.in);
+        String text2 = "Olli";
+        String nums2 = "[";
+        for (int i = 0; i < text2.length(); i++) {
+            int ascii = text2.charAt(i);
+            BigInteger encrypted = modularesPotenzieren(BigInteger.valueOf(ascii), eServer, nServer);
+            String base36 = base36Encoder(encrypted);
+            nums2 += "\""+base36+"\",";
+        }
+        nums2 = nums2.substring(0, nums2.length()-1) + "]";
+        client.sendMessage(nums2);
 
         //System.out.println(eServer);
         //System.out.println(nServer);
@@ -225,7 +237,7 @@ public class ClientRSA {
                 System.out.println("Got message from server: "+text);
             }    
         }).start();
-        Scanner scanner = new Scanner(System.in);
+        
         while (true) {
             System.out.print("Geben Sie eine Nachricht ein: ");
             String text = scanner.nextLine();
