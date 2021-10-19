@@ -8,6 +8,7 @@ import tkinter as tk
 from tkinter import *
 import time
 from PIL import Image, ImageTk
+from stoppable_thread import Stoppable_thread
 
 # MillerRabin Algorithmus
 def millerRabin(n):
@@ -80,17 +81,17 @@ def decrypt(d, text, N): #decrypt text with d
 
 def handle(client, private_key, N, public_keys, clients):
     while True:
-        #try:                                                            #recieving messages vom Client
-        text = client.recv(int(1e6)).decode('utf8')
-        print("Client "+str(clients.index(client)) + ": " +decrypt(private_key, text, N))
-        broadcast(decrypt(private_key, text, N), public_keys, clients)
-        """except:
+        try:                                                            #recieving messages vom Client
+            text = client.recv(int(1e6)).decode('utf8')
+            print("Client "+str(clients.index(client)) + ": " +decrypt(private_key, text, N))
+            broadcast(decrypt(private_key, text, N), public_keys, clients)
+        except:
             print("Client " + str(clients.index(client)) + " disconnected.")                                                    #löschen der Clients
             index = clients.index(client)
             public_keys.pop(index)
             clients.remove(client)
             client.close()
-            break"""
+            break
 
 def receive(e, N, private_key, server, public_keys, clients):                                                          #mehrere Clients empfangen
     while True:
@@ -111,8 +112,8 @@ def receive(e, N, private_key, server, public_keys, clients):                   
 def create_keys():
     print("RSA Start")
 
-    p = make_prime(random.randint(1e100, 1e101))
-    q = make_prime(random.randint(1e100, 1e101))
+    p = make_prime(random.randint(1e150, 1e151))
+    q = make_prime(random.randint(1e150, 1e151))
     N = p*q
     phi = (p-1)*(q-1)
 
@@ -141,7 +142,7 @@ def create_keys():
     private_key = d[-1] if d[-1] > 0 else d[-1] + a[0]
     return (e, N, private_key)
 
-def main():
+def main(loading_animation_thread):
     print("Hallo")
     e, N, private_key = create_keys()
 
@@ -159,40 +160,34 @@ def main():
     nicknames = ["WDQAD"]
     nicknames[0] = "ewqdq"
     print("RSA_FINISHED")
+    loading_animation_thread.stop()
+    label['text'] = "Server wurde gestartet!"
     receive(e, N, private_key, server, public_keys, clients)
 
-"""
-def gif_displayer(label, name, sleep_time):
-    i = 0
-    while True:
-        try:
-            frame = PhotoImage(file=name, format = 'gif -index %i' %(i))
-            i += 1
-            label.configure(image=frame)
-            time.sleep(sleep_time)
-        except:
-           i = 0
-"""       
+class Loading_Animation(Stoppable_thread):
+    def run(self):
+        i = 0
+        while not self.stopped():
+            label['text'] = ''.join(["Server wird gestartet "] + ["." for _ in range(i)])
+            i = (i+1)%4
+            time.sleep(1)
 
 if __name__ == "__main__":
-    logic = threading.Thread(target=main)
-    logic.start()
     window = tk.Tk()
     window.geometry("500x500")
     window.title("RSA SECURED PYTHON SERVER")
     window.iconbitmap("logo_server.ico")
-    label = tk.Label(window, text="Server wird gestartet...")
+    label = tk.Label(window, text="Server wird gestartet ")
     label.pack()
     label.place(x=250, y=150, anchor="center")
     label['font'] = ("Courier", 20)
-    """
-    wheel_label = tk.Label(window, width=250, height=250)
-    wheel_label.pack()
-    #wheel_label.place(width=200, height=200, x=250, y=250, anchor="center")
-    wheel = threading.Thread(target=gif_displayer, args=(wheel_label, "loading_wheel.gif", 0.1))
-    wheel.start()
-    """
     
+    loading_animation_thread = Loading_Animation()
+    loading_animation_thread.start()
+
+    logic = threading.Thread(target=main, args=[loading_animation_thread])
+    logic.start()
+
     window.mainloop()
 
     
