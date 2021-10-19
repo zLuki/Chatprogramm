@@ -73,8 +73,8 @@ def handle(private_key, N, server):
             #server.close()
             #break
 
-p = make_prime(random.randint(1e100, 1e101))
-q = make_prime(random.randint(1e100, 1e101))
+p = make_prime(random.randint(1e50, 1e51))
+q = make_prime(random.randint(1e50, 1e51))
 N = p*q
 phi = (p-1)*(q-1)
 
@@ -100,18 +100,24 @@ while -counter <= len(a):
 private_key = d[-1] if d[-1] > 0 else d[-1] + a[0]
 
 
-#print(e)
-#print(N)
-#print(private_key)
+print(e)
+print(N)
+print(private_key)
 
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-s.connect(("192.168.48.129", 50000))
+s.connect(("192.168.1.7", 50000))
 
-s.send(str(e).encode())
-s.send(str(N).encode())
+s.send((str(e)+"\r\n").encode())
+s.send((str(N)+"\r\n").encode())
 
 e = int(s.recv(1024).decode())
 N_server = int(s.recv(1024).decode())
+
+data = "Lukas"
+ascii = [ord(x) for x in data]
+encrypted = [modulares_potenzieren(x, e, N_server) for x in ascii]
+base36_nums = [numpy.base_repr(x, 36) for x in encrypted]  
+s.send(json.dumps(base36_nums).encode())
 
 thread = threading.Thread(target=handle, args=(private_key, N, s))
 thread.start()
