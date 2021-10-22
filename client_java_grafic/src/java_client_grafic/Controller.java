@@ -31,7 +31,6 @@ public class Controller {
 
         if(nicknameInput.getText().length() == 0) {
             nicknameInput.setStyle("-fx-background-color: red");
-            clientRSA.setCurrentlyConnected(false);
             connected=false;
             connectedLabel.setText("Currently not connected!");
             return;
@@ -86,10 +85,12 @@ public class Controller {
     }
     @FXML
     public void stopConnection() {
-        clientRSA.stopConnection();
-        clientRSA.setCurrentlyConnected(false);
-        connected=false;
-        connectedLabel.setText("Currently not connected!");
+        if(connected) {
+            clientRSA.stopConnection();
+            clientRSA.setCurrentlyConnected(false);
+            connected = false;
+            connectedLabel.setText("Currently not connected!");
+        }
     }
 
     @FXML
