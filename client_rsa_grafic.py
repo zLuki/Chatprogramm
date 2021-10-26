@@ -69,7 +69,9 @@ def handle(private_key, N, server):
     while True:
         #try:
         text = server.recv(int(1e8)).decode('utf8')
-        print("Got message from Server: "+decrypt(private_key, text, N))
+        message = decrypt(private_key, text, N)
+        print("Got message from Server: "+message)
+        messages_label['text'] += message + "\n"
         #except:
             #print("FEHLER!")
             #server.close()
@@ -106,8 +108,27 @@ def create_keys():
     print("RSA ENDE")
     return (e, N, private_key)
 
-def main():
+def send_message():
+    data = enter_message_input.get()
+    ascii = [ord(x) for x in data]
+    encrypted = [modulares_potenzieren(x, e, N_server) for x in ascii]
+    base36_nums = [numpy.base_repr(x, 36) for x in encrypted]  
+    s.send(json.dumps(base36_nums).encode())
+    enter_message_input.delete(0, 'end')
 
+def change_scene():
+    nickname_label.destroy()
+    nickname_input.destroy()
+    ip_label.destroy()
+    ip_input.destroy()
+    confirm_button.destroy()
+    error_message_label.destroy()
+    messages_label.place(x=10, y=10)
+    enter_message_input.place(x=10, y=640)
+    send_message_button.place(x=350, y=630)
+
+def main():
+    global s, e, N_server
     e, N, private_key = create_keys()
 
     print(e)
@@ -115,7 +136,12 @@ def main():
     print(private_key)
 
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.connect((ip_input['text'], 50000))
+    ip = ip_input.get()
+    try:
+        s.connect((ip, 50000))
+    except OSError:
+        error_message_label['text'] = "Der Server "+ip+" ist nicht erreichbar!"
+        return
 
     s.send((str(e)+"\r\n").encode())
     s.send((str(N)+"\r\n").encode())
@@ -123,7 +149,7 @@ def main():
     e = int(s.recv(1024).decode())
     N_server = int(s.recv(1024).decode())
 
-    data = nickname_input['text']
+    data = nickname_input.get()
     ascii = [ord(x) for x in data]
     encrypted = [modulares_potenzieren(x, e, N_server) for x in ascii]
     base36_nums = [numpy.base_repr(x, 36) for x in encrypted]  
@@ -132,57 +158,56 @@ def main():
     thread = threading.Thread(target=handle, args=(private_key, N, s))
     thread.start()
 
-    while (True):
-        data = input("Geben Sie die Nachricht ein: ")
-        ascii = [ord(x) for x in data]
-        encrypted = [modulares_potenzieren(x, e, N_server) for x in ascii]
-        base36_nums = [numpy.base_repr(x, 36) for x in encrypted]  
-        s.send(json.dumps(base36_nums).encode())
+    change_scene()
+
 
 if __name__ == "__main__":
+
+    # SERVER SOCKET AND KEYS
+    s = None
+    e = None
+    N_server = None
+
     window = tk.Tk()
     window.geometry("500x700")
     window.title("Chatprogramm Python Client")
     window.iconbitmap("logo_server.ico")
     # Nickname label
     nickname_label = tk.Label(window, text="Nickname:")
-    nickname_label.pack()
     nickname_label.place(x=100, y=200)
     nickname_label['font'] = ("Courier", 13)
     # IP label
     ip_label = tk.Label(window, text="IP Adresse:")
-    ip_label.pack()
     ip_label.place(x=100, y=250)
     ip_label['font'] = ("Courier", 13)
     # Nickname input
     nickname_input = tk.Entry(window)
-    nickname_input.pack()
     nickname_input.place(x=250, y=200)
     nickname_input['font'] = ("Courier", 13)
     # IP input
     ip_input = tk.Entry(window)
-    ip_input.pack()
     ip_input.place(x=250, y=250)
     ip_input['font'] = ("Courier", 13)
     # confirm button
     confirm_button = tk.Button(window, text="Verbinden!", command=lambda: main())
-    confirm_button.pack()
     confirm_button.place(x=250, y=300)
     confirm_button['font'] = ("Courier", 18)
+    # error message
+    error_message_label = tk.Label(window)
+    error_message_label['font'] = ("Courier", 13)
+    error_message_label.place(x=10, y=350)
+    error_message_label.configure(fg="red")
+
     # Messages box
     messages_label = tk.Label(window, width=67, height=40)
-    messages_label.pack()
-    messages_label.place(x=10, y=10)
     messages_label.configure(background="yellow")
     # Enter Message box
     enter_message_input = tk.Entry(window)
-    enter_message_input.pack()
-    enter_message_input.place(x=10, y=640)
     enter_message_input['font'] = ("Courier", 20)
     enter_message_input.configure(background="red")
-    # Send message buton
-    send_message_button = tk.Button(window, text="Senden")
-    send_message_button.pack()
-    send_message_button.place(x=350, y=640)
+    # Send message button
+    send_message_button = tk.Button(window, text="Senden", command=lambda:send_message())
     send_message_button['font'] = ("Courier", 20)
+    
+
     window.mainloop()
