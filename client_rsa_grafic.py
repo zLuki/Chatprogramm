@@ -2,7 +2,8 @@ import random
 import socket
 import json
 import threading
-import numpy;
+import numpy
+import tkinter as tk
 
 
 def modulares_potenzieren(b,e,m):
@@ -73,10 +74,11 @@ def handle(private_key, N, server):
             #server.close()
             #break
 
-if __name__ == "__main__":
+def create_keys():
+    print("RSA Start")
 
-    p = make_prime(random.randint(1e50, 1e51))
-    q = make_prime(random.randint(1e50, 1e51))
+    p = make_prime(random.randint(1e100, 1e101))
+    q = make_prime(random.randint(1e100, 1e101))
     N = p*q
     phi = (p-1)*(q-1)
 
@@ -100,14 +102,19 @@ if __name__ == "__main__":
 
     # Falls der private key negativ ist, muss noch einmal das a addiert werden
     private_key = d[-1] if d[-1] > 0 else d[-1] + a[0]
+    print("RSA ENDE")
+    return (e, N, private_key)
 
+def main():
+
+    e, N, private_key = create_keys()
 
     print(e)
     print(N)
     print(private_key)
 
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.connect(("192.168.1.7", 50000))
+    s.connect((ip_input['text'], 50000))
 
     s.send((str(e)+"\r\n").encode())
     s.send((str(N)+"\r\n").encode())
@@ -115,7 +122,7 @@ if __name__ == "__main__":
     e = int(s.recv(1024).decode())
     N_server = int(s.recv(1024).decode())
 
-    data = "Lukas"
+    data = nickname_input['text']
     ascii = [ord(x) for x in data]
     encrypted = [modulares_potenzieren(x, e, N_server) for x in ascii]
     base36_nums = [numpy.base_repr(x, 36) for x in encrypted]  
@@ -130,3 +137,38 @@ if __name__ == "__main__":
         encrypted = [modulares_potenzieren(x, e, N_server) for x in ascii]
         base36_nums = [numpy.base_repr(x, 36) for x in encrypted]  
         s.send(json.dumps(base36_nums).encode())
+
+if __name__ == "__main__":
+    window = tk.Tk()
+    window.geometry("500x700")
+    window.title("Chatprogramm Python Client")
+    window.iconbitmap("logo_server.ico")
+    # Nickname label
+    nickname_label = tk.Label(window, text="Nickname:")
+    nickname_label.pack()
+    nickname_label.place(x=100, y=200)
+    nickname_label['font'] = ("Courier", 13)
+    # IP label
+    ip_label = tk.Label(window, text="IP Adresse:")
+    ip_label.pack()
+    ip_label.place(x=100, y=250)
+    ip_label['font'] = ("Courier", 13)
+    # Nickname input
+    nickname_input = tk.Entry(window)
+    nickname_input.pack()
+    nickname_input.place(x=250, y=200)
+    nickname_input['font'] = ("Courier", 13)
+    # IP input
+    ip_input = tk.Entry(window)
+    ip_input.pack()
+    ip_input.place(x=250, y=250)
+    ip_input['font'] = ("Courier", 13)
+    # confirm button
+    confirm_button = tk.Button(window, text="Verbinden!", command=lambda: main())
+    confirm_button.pack()
+    confirm_button.place(x=250, y=300)
+    confirm_button['font'] = ("Courier", 18)
+
+    
+
+    window.mainloop()
