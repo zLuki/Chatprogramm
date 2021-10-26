@@ -2,6 +2,7 @@ import random
 import socket
 import json
 import threading
+from tkinter import font
 import numpy
 import tkinter as tk
 
@@ -168,7 +169,20 @@ if __name__ == "__main__":
     confirm_button.pack()
     confirm_button.place(x=250, y=300)
     confirm_button['font'] = ("Courier", 18)
-
-    
-
+    # Messages box
+    messages_label = tk.Label(window, width=67, height=40)
+    messages_label.pack()
+    messages_label.place(x=10, y=10)
+    messages_label.configure(background="yellow")
+    # Enter Message box
+    enter_message_input = tk.Entry(window)
+    enter_message_input.pack()
+    enter_message_input.place(x=10, y=640)
+    enter_message_input['font'] = ("Courier", 20)
+    enter_message_input.configure(background="red")
+    # Send message buton
+    send_message_button = tk.Button(window, text="Senden")
+    send_message_button.pack()
+    send_message_button.place(x=350, y=640)
+    send_message_button['font'] = ("Courier", 20)
     window.mainloop()
