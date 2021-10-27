@@ -5,7 +5,10 @@ import threading
 from tkinter import font
 import numpy
 import tkinter as tk
-
+import re
+from PIL import ImageTk, Image
+import time
+from stoppable_thread import Stoppable_thread
 
 def modulares_potenzieren(b,e,m):
     res = 1
@@ -117,6 +120,7 @@ def send_message():
     enter_message_input.delete(0, 'end')
 
 def change_scene():
+    window.configure(background="black")
     nickname_label.destroy()
     nickname_input.destroy()
     ip_label.destroy()
@@ -127,21 +131,36 @@ def change_scene():
     enter_message_input.place(x=10, y=640)
     send_message_button.place(x=350, y=630)
 
-def main():
+def main(loading_animation):
+    error_message_label['text'] = ""
     global s, e, N_server
+    
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    ip = ip_input.get()
+    data = nickname_input.get()
+    if len(data) <= 0:
+        error_message_label['text'] = "Es wurde kein Nickname eingegeben!"
+        loading_animation.stop()
+        confirm_button['text'] = "Verbinden!"
+        return
+    if not re.match(r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}', ip):
+        error_message_label['text'] = "Die eingegebene IP Adresse ist ungültig!"
+        loading_animation.stop()
+        confirm_button['text'] = "Verbinden!"
+        return
+    try:
+        s.connect((ip, 50000))
+    except OSError:
+        error_message_label['text'] = "Der Server "+ip+" ist nicht erreichbar!"
+        loading_animation.stop()
+        confirm_button['text'] = "Verbinden!"
+        return
+
     e, N, private_key = create_keys()
 
     print(e)
     print(N)
     print(private_key)
-
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    ip = ip_input.get()
-    try:
-        s.connect((ip, 50000))
-    except OSError:
-        error_message_label['text'] = "Der Server "+ip+" ist nicht erreichbar!"
-        return
 
     s.send((str(e)+"\r\n").encode())
     s.send((str(N)+"\r\n").encode())
@@ -149,7 +168,6 @@ def main():
     e = int(s.recv(1024).decode())
     N_server = int(s.recv(1024).decode())
 
-    data = nickname_input.get()
     ascii = [ord(x) for x in data]
     encrypted = [modulares_potenzieren(x, e, N_server) for x in ascii]
     base36_nums = [numpy.base_repr(x, 36) for x in encrypted]  
@@ -157,9 +175,23 @@ def main():
 
     thread = threading.Thread(target=handle, args=(private_key, N, s))
     thread.start()
-
+    loading_animation.stop()
     change_scene()
 
+class Loading_Animation(Stoppable_thread):
+    def run(self):
+        i = 0
+        while not self.stopped():
+            confirm_button['text'] = ''.join(["Generiere Schlüssel "] + ["." for _ in range(i)])
+            i = (i+1)%4
+            time.sleep(1)
+
+def confirm():
+    loading_animation = Loading_Animation()
+    loading_animation.start()
+    thread = threading.Thread(target=main, args=[loading_animation])
+    thread.start()
+    
 
 if __name__ == "__main__":
 
@@ -172,6 +204,7 @@ if __name__ == "__main__":
     window.geometry("500x700")
     window.title("Chatprogramm Python Client")
     window.iconbitmap("logo_server.ico")
+
     # Nickname label
     nickname_label = tk.Label(window, text="Nickname:")
     nickname_label.place(x=100, y=200)
@@ -189,8 +222,8 @@ if __name__ == "__main__":
     ip_input.place(x=250, y=250)
     ip_input['font'] = ("Courier", 13)
     # confirm button
-    confirm_button = tk.Button(window, text="Verbinden!", command=lambda: main())
-    confirm_button.place(x=250, y=300)
+    confirm_button = tk.Button(window, text="Verbinden!", command=lambda:confirm())
+    confirm_button.place(x=100, y=300)
     confirm_button['font'] = ("Courier", 18)
     # error message
     error_message_label = tk.Label(window)
@@ -199,12 +232,15 @@ if __name__ == "__main__":
     error_message_label.configure(fg="red")
 
     # Messages box
-    messages_label = tk.Label(window, width=67, height=40)
-    messages_label.configure(background="yellow")
+    messages_label = tk.Label(window, width=30, height=20, anchor="n")
+    messages_label.configure(background="black")
+    messages_label['font'] = ("Courier", 20)
+    messages_label.configure(fg="white")
     # Enter Message box
-    enter_message_input = tk.Entry(window)
+    enter_message_input = tk.Entry(window, borderwidth=5, relief="solid", highlightbackground="white", highlightcolor="white", highlightthickness=3, bd=0, insertbackground="white")
     enter_message_input['font'] = ("Courier", 20)
-    enter_message_input.configure(background="red")
+    enter_message_input.configure(background="black")
+    enter_message_input.configure(fg="white")
     # Send message button
     send_message_button = tk.Button(window, text="Senden", command=lambda:send_message())
     send_message_button['font'] = ("Courier", 20)
