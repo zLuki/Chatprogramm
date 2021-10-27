@@ -64,10 +64,11 @@ def modulares_potenzieren(b,e,m):
         e=e//2
     return res
 
-def broadcast(message, public_keys, clients):                                                 #broadcast funktion
+def broadcast(message, public_keys, clients, nicknames):                                                 #broadcast funktion
     ascii = [ord(x) for x in message]
     for i in range(len(clients)):
-        encrypted = [modulares_potenzieren(x, int(public_keys[i][0]), int(public_keys[i][1])) for x in ascii]
+        nickname = [ord(x) for x in nicknames[i]+": "]
+        encrypted = [modulares_potenzieren(x, int(public_keys[i][0]), int(public_keys[i][1])) for x in nickname+ascii]
         base36_nums = [numpy.base_repr(x, base=36) for x in encrypted]
         clients[i].send((json.dumps(base36_nums)+"\r\n").encode())
 
@@ -84,8 +85,9 @@ def handle(client, private_key, N, public_keys, clients, nicknames, amount_messa
         try:                                                            #recieving messages vom Client
             text = client.recv(int(1e6)).decode('utf8')
             print("Client "+str(clients.index(client)) + ": " +decrypt(private_key, text, N))
-            broadcast(decrypt(private_key, text, N), public_keys, clients)
+            broadcast(decrypt(private_key, text, N), public_keys, clients, nicknames)
             amount_messages[index] += 1
+            refresh_menu(nicknames, clients, amount_messages)
         except:
             print("Client " + str(index) + " disconnected.")                                                    #löschen der Clients
             public_keys.pop(index)
@@ -122,8 +124,8 @@ def receive(e, N, private_key, server, public_keys, clients, nicknames, amount_m
 def create_keys():
     print("RSA Start")
 
-    p = make_prime(random.randint(1e50, 1e51))
-    q = make_prime(random.randint(1e50, 1e51))
+    p = make_prime(random.randint(1e150, 1e151))
+    q = make_prime(random.randint(1e150, 1e151))
     N = p*q
     phi = (p-1)*(q-1)
 
@@ -168,7 +170,7 @@ def refresh_menu(nicknames, clients, amount_messages):
     show_menu()
     for i in range(len(nicknames)):
         connected_users['text'] += nicknames[i] + "\n"
-        connected_users_ip['text'] += clients[i].getsockname()[0] + "\n"
+        connected_users_ip['text'] += clients[i].getpeername()[0] + "\n"
         connected_users_send_messages['text'] += str(amount_messages[i]) + "\n"
 
 

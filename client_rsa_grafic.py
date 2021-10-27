@@ -6,7 +6,6 @@ from tkinter import font
 import numpy
 import tkinter as tk
 import re
-from PIL import ImageTk, Image
 import time
 from stoppable_thread import Stoppable_thread
 
