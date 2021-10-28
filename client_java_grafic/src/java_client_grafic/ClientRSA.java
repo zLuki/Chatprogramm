@@ -147,14 +147,18 @@ public class ClientRSA {
         String res = "";
         try {
             while (true) {
-                if(!currentlyConnected)
-                    return "";
-                if(in.ready())
-                    res = in.readLine();
-                if (res.length() > 0) break;
+                    if (!this.currentlyConnected)
+                        return "";
+                    if (in.ready()) {
+                        res = in.readLine();
+                    }
+                    if (res.length() > 0) {
+                        break;
+                    }
             }
         } catch (IOException e) {
-            System.out.println("FEHLER BEIM EMPFANGEN EINER NACHRICHT!");
+            if(this.currentlyConnected)
+                System.out.println("FEHLER BEIM EMPFANGEN EINER NACHRICHT!");
         }
         return res;
     }
@@ -171,8 +175,12 @@ public class ClientRSA {
 
     public boolean runClient(String ipServer, String nickname) {
 
+        if (!(startConnection(ipServer, 50000)))
+            return false;
+        this.currentlyConnected=true;
+
         String limit = "1";
-        for (int i = 0; i < 10; i++) limit += "0";
+        for (int i = 0; i < 60; i++) limit += "0";
         BigInteger min = new BigInteger(limit), max = new BigInteger(limit + "0");
 
         BigInteger p = makePrime(getRandomBigInt(min, max));
@@ -208,10 +216,6 @@ public class ClientRSA {
         }
         privateKey = privateKeyBuf;
 
-
-        if (!(startConnection(ipServer, 50000)))
-            return false;
-        currentlyConnected=true;
         sendMessage(e.toString());
         sendMessage(N.toString());
 

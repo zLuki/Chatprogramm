@@ -47,14 +47,17 @@ public class Controller {
             ipInput.setStyle("-fx-background-color: green"); //success connecting...
             nicknameInput.setStyle("-fx-background-color: green");
             clientRSA.setCurrentlyConnected(true);
-            connected=false;
+            connected=true;
             connectedLabel.setText("Currently connected to \"" + ipInput.getText() + "\"");
 
             new Thread(() -> {
                 while (true) {
+
                     if(!clientRSA.getCurrentlyConnected())
                         break;
+
                     String s = clientRSA.getMessage(), text = "";
+
                     if(s.length() <= 2)
                         continue;
 
