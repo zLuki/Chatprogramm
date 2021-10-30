@@ -17,6 +17,7 @@ public class ClientRSA {
     private BigInteger nServer;
     private BigInteger N;
     private boolean currentlyConnected = false;
+    private String nickname;
 
     public BigInteger getPrivateKey() {
         return privateKey;
@@ -32,6 +33,10 @@ public class ClientRSA {
 
     public void setCurrentlyConnected(boolean currentlyConnected) {
         this.currentlyConnected = currentlyConnected;
+    }
+
+    public String getNickname() {
+        return nickname;
     }
 
     public static BigInteger modularesPotenzieren(BigInteger b, BigInteger e, BigInteger m) {
@@ -178,7 +183,7 @@ public class ClientRSA {
         if (!(startConnection(ipServer, 50000)))
             return false;
         this.currentlyConnected=true;
-
+        this.nickname = nickname;
         String limit = "1";
         for (int i = 0; i < 60; i++) limit += "0";
         BigInteger min = new BigInteger(limit), max = new BigInteger(limit + "0");

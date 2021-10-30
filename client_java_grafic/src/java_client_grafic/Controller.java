@@ -82,7 +82,7 @@ public class Controller {
     private void sendMessage(){
 
         if(connected && messageInput.getLength() > 0) {
-            clientRSA.sendUserMessage(messageInput.getText());
+            clientRSA.sendUserMessage(clientRSA.getNickname()+": "+messageInput.getText());
             messageInput.setText("");
         }
     }

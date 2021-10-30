@@ -111,7 +111,7 @@ def create_keys():
     return (e, N, private_key)
 
 def send_message():
-    data = enter_message_input.get()
+    data = g_nickname +": "+ enter_message_input.get()
     ascii = [ord(x) for x in data]
     encrypted = [modulares_potenzieren(x, e, N_server) for x in ascii]
     base36_nums = [numpy.base_repr(x, 36) for x in encrypted]  
@@ -132,11 +132,12 @@ def change_scene():
 
 def main(loading_animation):
     error_message_label['text'] = ""
-    global s, e, N_server
+    global s, e, N_server, g_nickname
     
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     ip = ip_input.get()
     data = nickname_input.get()
+    g_nickname = data
     if len(data) <= 0:
         error_message_label['text'] = "Es wurde kein Nickname eingegeben!"
         loading_animation.stop()
@@ -198,6 +199,7 @@ if __name__ == "__main__":
     s = None
     e = None
     N_server = None
+    g_nickname = None
 
     window = tk.Tk()
     window.geometry("500x700")
