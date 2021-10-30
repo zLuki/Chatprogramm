@@ -64,11 +64,10 @@ def modulares_potenzieren(b,e,m):
         e=e//2
     return res
 
-def broadcast(message, public_keys, clients, nicknames):                                                 #broadcast funktion
+def broadcast(message, public_keys, clients):                                                 #broadcast funktion
     ascii = [ord(x) for x in message]
     for i in range(len(clients)):
-        nickname = [ord(x) for x in nicknames[i]+": "]
-        encrypted = [modulares_potenzieren(x, int(public_keys[i][0]), int(public_keys[i][1])) for x in nickname+ascii]
+        encrypted = [modulares_potenzieren(x, int(public_keys[i][0]), int(public_keys[i][1])) for x in ascii]
         base36_nums = [numpy.base_repr(x, base=36) for x in encrypted]
         clients[i].send((json.dumps(base36_nums)+"\r\n").encode())
 
@@ -85,7 +84,7 @@ def handle(client, private_key, N, public_keys, clients, nicknames, amount_messa
         try:                                                            #recieving messages vom Client
             text = client.recv(int(1e6)).decode('utf8')
             print("Client "+str(clients.index(client)) + ": " +decrypt(private_key, text, N))
-            broadcast(decrypt(private_key, text, N), public_keys, clients, nicknames)
+            broadcast(decrypt(private_key, text, N), public_keys, clients)
             amount_messages[index] += 1
             refresh_menu(nicknames, clients, amount_messages)
         except:
@@ -124,8 +123,8 @@ def receive(e, N, private_key, server, public_keys, clients, nicknames, amount_m
 def create_keys():
     print("RSA Start")
 
-    p = make_prime(random.randint(1e150, 1e151))
-    q = make_prime(random.randint(1e150, 1e151))
+    p = make_prime(random.randint(1e10, 1e11))
+    q = make_prime(random.randint(1e10, 1e11))
     N = p*q
     phi = (p-1)*(q-1)
 
