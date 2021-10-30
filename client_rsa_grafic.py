@@ -173,7 +173,7 @@ def main(loading_animation):
     base36_nums = [numpy.base_repr(x, 36) for x in encrypted]  
     s.send(json.dumps(base36_nums).encode())
 
-    thread = threading.Thread(target=handle, args=(private_key, N, s))
+    thread = threading.Thread(target=handle, args=(private_key, N, s), daemon=True)
     thread.start()
     loading_animation.stop()
     change_scene()
@@ -189,7 +189,7 @@ class Loading_Animation(Stoppable_thread):
 def confirm():
     loading_animation = Loading_Animation()
     loading_animation.start()
-    thread = threading.Thread(target=main, args=[loading_animation])
+    thread = threading.Thread(target=main, args=[loading_animation], daemon=True)
     thread.start()
     
 

@@ -115,7 +115,7 @@ def receive(e, N, private_key, server, public_keys, clients, nicknames, amount_m
 
         amount_messages.append(0)
 
-        thread = threading.Thread(target=handle, args=(client, private_key, N, public_keys, clients, nicknames, amount_messages))
+        thread = threading.Thread(target=handle, args=(client, private_key, N, public_keys, clients, nicknames, amount_messages), daemon=True)
         thread.start()
         refresh_menu(nicknames, clients, amount_messages)
 
@@ -162,7 +162,18 @@ def show_correct_start(host):
     time.sleep(2)
     label.destroy()
     picture.destroy()
+
     host_label['text'] = "HOST: "+host
+    host_label.place(x=150, y=70, anchor="center")
+    connected_users.place(x=70, y=150, anchor="center")
+    connected_users_ip.place(x=200, y=150, anchor="center")
+    connected_users_send_messages.place(x=320, y=150, anchor="center")
+
+    add_server_label.place(x=10, y=600)
+    add_server_ip_label.place(x=10, y=650)
+    add_server_ip_input.place(x=150, y=650)
+    add_server_button.place(x=300, y=650)
+    add_server_error_label.place(x=10, y=700)
     show_menu()
 
 def refresh_menu(nicknames, clients, amount_messages):
@@ -173,7 +184,52 @@ def refresh_menu(nicknames, clients, amount_messages):
         connected_users_send_messages['text'] += str(amount_messages[i]) + "\n"
 
 
+def add_server():
+    global clients
+    ip = add_server_ip_input.get()
+    if not re.match(r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}', ip):
+        add_server_error_label['text'] = "Ungültige IP Adresse!"
+        return
+    if ip in clients:
+        add_server_error_label['text'] = "Bereits mit diesem Server verbunden!"
+        return
+    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    def connect_to_server():
+        global e, N, clients, nicknames, amount_messages, public_keys
+        try:
+            server.connect((ip, 50000))
+        except OSError:
+            add_server_error_label['text'] = "Der Server "+ip+" ist nicht erreichbar!"
+            return
+
+        server.send((str(e)+"\r\n").encode())
+        server.send((str(N)+"\r\n").encode())
+
+        e_server = int(server.recv(1024).decode())
+        N_server = int(server.recv(1024).decode())
+        public_keys.append([e_server, N_server])
+        print(e_server)
+        print(N_server)
+
+        ascii = [ord(x) for x in "SERVER"]
+        encrypted = [modulares_potenzieren(x, e_server, N_server) for x in ascii]
+        base36_nums = [numpy.base_repr(x, 36) for x in encrypted]  
+        server.send(json.dumps(base36_nums).encode())
+        
+        
+        clients.append(server)
+        nicknames.append("SERVER")
+        amount_messages.append(0)
+        threading.Thread(target=handle, args=(server, private_key, N, public_keys, clients, nicknames, amount_messages), daemon=True).start()
+        refresh_menu(nicknames, clients, amount_messages)
+        add_server_ip_input.delete(0, 'end')
+
+    
+    threading.Thread(target=connect_to_server, daemon=True).start()
+    
+    
 def main(loading_animation_thread):
+    global clients, nicknames, amount_messages, public_keys, e, N, private_key
     e, N, private_key = create_keys()
 
     ip_tester = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -204,12 +260,15 @@ class Loading_Animation(Stoppable_thread):
             time.sleep(1)
 
 if __name__ == "__main__":
+
+    # GLOBAL CONNECTED SERVERS AND KEYS
+    clients,nicknames,amount_messages,public_keys,e,N,private_key = None,None,None,None,None,None,None
+
     window = tk.Tk()
-    window.geometry("500x500")
+    window.geometry("500x1000")
     window.title("RSA SECURED PYTHON SERVER")
     window.iconbitmap("logo_server.ico")
     label = tk.Label(window, text="Server wird gestartet ")
-    label.pack()
     label.place(x=250, y=150, anchor="center")
     label['font'] = ("Courier", 20)
     
@@ -217,27 +276,26 @@ if __name__ == "__main__":
     loading_animation_thread.start()
 
     picture = tk.Label(window)
-    picture.pack()
     picture.place(x=250, y=300, anchor="center")
 
     host_label = tk.Label(window)
-    host_label.pack()
-    host_label.place(x=150, y=70, anchor="center")
     host_label['font'] = ("Courier", 20)
 
     connected_users = tk.Label(window,)
-    connected_users.pack()
-    connected_users.place(x=70, y=150, anchor="center")
 
     connected_users_ip = tk.Label(window)
-    connected_users_ip.pack()
-    connected_users_ip.place(x=200, y=150, anchor="center")
 
     connected_users_send_messages = tk.Label(window)
-    connected_users_send_messages.pack()
-    connected_users_send_messages.place(x=320, y=150, anchor="center")
 
-    logic = threading.Thread(target=main, args=[loading_animation_thread])
+    add_server_label = tk.Label(window, text="Server hinzufügen!") 
+    add_server_label['font'] = ('Courier', 20)
+    add_server_ip_label = tk.Label(window, text="IP Adresse des Servers:")
+    add_server_ip_input = tk.Entry(window)
+    add_server_button = tk.Button(window, text="Server hinzufügen", command=lambda:add_server())
+    add_server_error_label = tk.Label(window, fg="red")
+    
+
+    logic = threading.Thread(target=main, args=[loading_animation_thread], daemon=True)
     logic.start()
 
     window.mainloop()
