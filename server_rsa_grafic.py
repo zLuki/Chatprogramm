@@ -103,8 +103,8 @@ def receive(e, N, private_key, server, public_keys, clients, nicknames, amount_m
         print("Verbunden mit {}".format(str(address)))
         e_client = re.sub("\D", "", client.recv(1024).decode('utf8'))
         N_client = re.sub("\D", "", client.recv(1024).decode('utf8'))
-        print(e_client)
-        print(N_client)
+        #print(e_client)
+        #print(N_client)
         public_keys.append([e_client, N_client])
         client.send((str(e)+"\r\n").encode('utf8'))
         client.send((str(N)+"\r\n").encode('utf8'))
@@ -123,8 +123,8 @@ def receive(e, N, private_key, server, public_keys, clients, nicknames, amount_m
 def create_keys():
     print("RSA Start")
 
-    p = make_prime(random.randint(1e10, 1e11))
-    q = make_prime(random.randint(1e10, 1e11))
+    p = make_prime(random.randint(1e100, 1e101))
+    q = make_prime(random.randint(1e100, 1e101))
     N = p*q
     phi = (p-1)*(q-1)
 
@@ -208,8 +208,8 @@ def add_server():
         e_server = int(server.recv(1024).decode())
         N_server = int(server.recv(1024).decode())
         public_keys.append([e_server, N_server])
-        print(e_server)
-        print(N_server)
+        #print(e_server)
+        #print(N_server)
 
         ascii = [ord(x) for x in "SERVER"]
         encrypted = [modulares_potenzieren(x, e_server, N_server) for x in ascii]

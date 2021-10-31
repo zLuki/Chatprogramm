@@ -60,7 +60,6 @@ def make_prime(n):
     return n
 
 def decrypt(d, text, N): #decrypt text with d
-    print(text)
     text = json.loads(text)
     nums = [int(x, 36) for x in text]
     decrypted = [modulares_potenzieren(x, d, N) for x in nums]
@@ -158,9 +157,9 @@ def main(loading_animation):
 
     e, N, private_key = create_keys()
 
-    print(e)
-    print(N)
-    print(private_key)
+    #print(e)
+    #print(N)
+    #print(private_key)
 
     s.send((str(e)+"\r\n").encode())
     s.send((str(N)+"\r\n").encode())

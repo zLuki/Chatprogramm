@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch4jConfig>
+  <dontWrapJar>false</dontWrapJar>
+  <headerType>gui</headerType>
+  <jar>C:\Users\1FortniteBan\Documents\GitHub\Chatprogramm\client_java_grafic\out\artifacts\clientGrafisch2_jar\clientGrafisch2.jar</jar>
+  <outfile>C:\Users\1FortniteBan\Documents\GitHub\Chatprogramm\client_java_grafic\out\artifacts\clientGrafisch2_jar\JavaClient.exe</outfile>
+  <errTitle>Outdated Java version</errTitle>
+  <cmdLine></cmdLine>
+  <chdir>.</chdir>
+  <priority>normal</priority>
+  <downloadUrl>https://www.oracle.com/java/technologies/downloads/</downloadUrl>
+  <supportUrl></supportUrl>
+  <stayAlive>false</stayAlive>
+  <restartOnCrash>false</restartOnCrash>
+  <manifest></manifest>
+  <icon>C:\Users\1FortniteBan\Documents\GitHub\Chatprogramm\client_java_grafic\out\artifacts\clientGrafisch2_jar\logo_client.ico</icon>
+  <jre>
+    <path></path>
+    <bundledJre64Bit>false</bundledJre64Bit>
+    <bundledJreAsFallback>false</bundledJreAsFallback>
+    <minVersion>15.0.2</minVersion>
+    <maxVersion></maxVersion>
+    <jdkPreference>preferJre</jdkPreference>
+    <runtimeBits>64/32</runtimeBits>
+  </jre>
+</launch4jConfig>
